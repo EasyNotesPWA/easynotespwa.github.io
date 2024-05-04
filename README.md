@@ -1,2 +1,2 @@
 # easynotespwa.github.io
-Easy Notes PWA
+PWA hosting repository. The development is [here](https://github.com/r57zone/EasyNotes).
