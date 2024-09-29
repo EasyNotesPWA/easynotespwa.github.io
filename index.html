@@ -651,46 +651,33 @@ textarea:focus{outline:none;}
 		}, 3000);
 	}
 	
-	function GetData(URL){
-		return new Promise(function(resolve, reject) {
-			let request = new XMLHttpRequest();
-			
-			request.open('GET', URL, true);
-			
-			request.onload = function() {
-				if	(request.status == 200)
-					resolve(request.responseText);
-				else
-					reject();
+	function GetData(URL) {
+		return fetch(URL, {
+			method: 'GET',
+			referrerPolicy: 'unsafe-url'
+		})
+		.then(response => {
+			if (!response.ok) {
+				throw new Error('Network response was not ok');
 			}
-			
-			request.onerror = function() {
-				reject();
-			};
-			
-			request.send();
+			return response.text();
 		});
 	}
-	
-	function SendData(URL, Data){
-		 return new Promise(function(resolve, reject) {
-		 
-			let request = new XMLHttpRequest();
-			request.open('POST', URL);
-			request.setRequestHeader('Content-type', 'text/plain');
-			
-			request.onload = function() {
-				if	(request.status == 200)
-					resolve(request.response);
-				else
-					reject();
+
+	function SendData(URL, Data) {
+		return fetch(URL, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'text/plain'
+			},
+			body: Data,
+			referrerPolicy: 'unsafe-url'
+		})
+		.then(response => {
+			if (!response.ok) {
+				throw new Error('Network response was not ok');
 			}
-			
-			request.onerror = function() {
-				reject();
-			};
-			
-			request.send(Data);
+			return response.text();
 		});
 	}
 	
