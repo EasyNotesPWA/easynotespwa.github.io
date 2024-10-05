@@ -1,17 +1,21 @@
 /* iOS fixes */
+html{-webkit-text-size-adjust: 100%; /* Prevent font scaling in landscape while allowing user zoom */}
 body, textarea {font-family: '-apple-system', Helvetica, HelveticaNeue;}
 #settings #controls #item .title {margin-top: -1px;}
 
-.UnusedOnIOS{display:none;}
+/* 
+/* 	General settings for all models / Общие настройки для всех моделей
+	iPhone SE 2016 - 320x568 
+*/
 
-/* General settings for all models / Общие настройки для всех моделей */
-@media only screen and (orientation: portrait) {
+@media only screen and (min-width: 321px) and (orientation: portrait) {
     #btn {padding: 0 10px;}
     #list #items #note #title {margin-left: 18px;}
     #list #items #note #date {margin-right: 20px;}
     #notification {padding: 15px 0 25px 0;}
 }
-@media only screen and (orientation: landscape) {
+
+@media only screen and (min-width: 569px) and (orientation: landscape) {
     #btn {padding: 0 20px;}
     #list #items #note #title {margin-left: 46px;}
     #list #items #note #date {margin-right: 48px;}

@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>EasyNotes</title>
 <meta name="apple-mobile-web-app-title" content="EasyNotes">
-<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <!--<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />-->
@@ -18,35 +18,45 @@
 <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180x180.png">
 <!--<link rel="apple-touch-startup-image" href="images/launch.png">-->
 <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="android.css">
 <script type="text/javascript">
 	const PlatformAndroid = 0;
 	const PlatformIOS = 1;
 	const PlatformWindows = 2;
 	const PlatformWeb = 3; // Без IP адреса и специфики iOS
 	let DevicePlatform = PlatformAndroid;
+	let PlatformNames = ['Google Android', 'Apple iOS', 'Microsoft Windows', 'Web']
 	
-	if (/Android/i.test(window.navigator.userAgent))
-		DevicePlatform = PlatformAndroid;
-	else if (/iPhone|iPod|iPad/i.test(window.navigator.userAgent)) {
-		DevicePlatform = PlatformIOS;
+	// Кеширование платформы
+	if (localStorage.getItem('DevicePlatform') == null) {
+		// Автоопределение платформы
+		if (/Android/i.test(window.navigator.userAgent))
+			DevicePlatform = PlatformAndroid;
+		else if (/iPhone|iPod|iPad/i.test(window.navigator.userAgent))
+			DevicePlatform = PlatformIOS;
+		else if (/Edg/.test(navigator.userAgent))
+			DevicePlatform = PlatformWindows;
+		localStorage.setItem('DevicePlatform', DevicePlatform);
+	} else
+		DevicePlatform = localStorage.getItem('DevicePlatform');
 		
-		var cssFiles = [
-    location.pathname.split("/").pop().replace(/\.\w+$/, ".css"),
-    "ios.css"
-	];
-
-	cssFiles.forEach(function(cssFile) {
-		var link = document.createElement("link");
-		link.href = cssFile;
-		link.type = "text/css";
-		link.rel = "stylesheet";
-		link.media = "screen,print";
-		document.head.appendChild(link);
-	});
+	// Дополнительные стили
+	function AddCSSFile(cssFile) {
+		let cssFiles = [location.pathname.split('/').pop().replace(/\.\w+$/, '.css'), cssFile];
+		cssFiles.forEach(function(file) {
+			let link = document.createElement('link');
+			link.href = file;
+			link.type = 'text/css';
+			link.rel = 'stylesheet';
+			link.media = 'screen,print';
+			document.head.appendChild(link);
+		});
+	}
+	if (DevicePlatform == PlatformIOS)
+		AddCSSFile('ios.css');
+	else // Android / Windows / Web
+		AddCSSFile('any.css');
 		
-	} else if (/Edg/.test(navigator.userAgent))
-		DevicePlatform = PlatformWindows;
+	//alert(PlatformNames[DevicePlatform]);
 
 	let FirstRun = false;
 	let DeviceID;
@@ -882,49 +892,37 @@
 		}
 		
 		// iOS блокировка скрола
-		function iOSBlockOffsetAppScrolling(){
-			document.ontouchmove = function(e){
-				e.preventDefault();
-			}
-			
-			var ItemsElem = document.getElementById('items');
-			ItemsElem.addEventListener('touchstart', function(event) {
-				this.allowUp = (this.scrollTop > 0);
-				this.allowDown = (this.scrollTop < this.scrollHeight - this.clientHeight);
-				this.slideBeginY = event.pageY;
-			});
-			
-			ItemsElem.addEventListener('touchmove', function(event) {
-				var up = (event.pageY > this.slideBeginY);
-				var down = (event.pageY < this.slideBeginY);
-				this.slideBeginY = event.pageY;
-				if ((up && this.allowUp) || (down && this.allowDown)) {
+		function iOSBlockOffsetAppScrolling() {
+			let preventScroll = function(event, element) {
+				let up = (event.touches[0].clientY > element.slideBeginY);
+				let down = (event.touches[0].clientY < element.slideBeginY);
+				element.slideBeginY = event.touches[0].clientY;
+
+				if ((up && element.allowUp) || (down && element.allowDown)) {
 					event.stopPropagation();
-				}
-				else {
+				} else {
 					event.preventDefault();
 				}
-			});
-			
-			var MemoElem = document.getElementById('memo');
-			MemoElem.addEventListener('touchstart', function(event) {
-				this.allowUp = (this.scrollTop > 0);
-				this.allowDown = (this.scrollTop < this.scrollHeight - this.clientHeight);
-				this.slideBeginY = event.pageY;
-			});
-			
-			MemoElem.addEventListener('touchmove', function(event) {
-				var up = (event.pageY > this.slideBeginY);
-				var down = (event.pageY < this.slideBeginY);
-				this.slideBeginY = event.pageY;
-				if ((up && this.allowUp) || (down && this.allowDown)) {
-					event.stopPropagation();
-				}
-				else {
-					event.preventDefault();
-				}
-			});
+			};
+
+			let enableScrollLock = function(elementId) {
+				let element = document.getElementById(elementId);
+
+				element.addEventListener('touchstart', function(event) {
+					element.allowUp = (element.scrollTop > 0);
+					element.allowDown = (element.scrollTop < element.scrollHeight - element.clientHeight);
+					element.slideBeginY = event.touches[0].clientY;
+				});
+
+				element.addEventListener('touchmove', function(event) {
+					preventScroll(event, element);
+				});
+			};
+
+			enableScrollLock('items');
+			enableScrollLock('memo');
 		}
+
 	}
 	
 	// Инициализация
@@ -1025,6 +1023,20 @@
 		// Блокируем скролинг вне приложения для iOS
 		if (DevicePlatform == PlatformIOS)
 			iOSBlockOffsetAppScrolling();
+			
+		// Скрываем лишние пункты меню для Web и iOS
+		if (DevicePlatform == PlatformIOS || DevicePlatform == PlatformWeb) {
+			document.querySelectorAll('.UnusedOnIOS').forEach(function(element) {
+				element.style.display = 'none';
+			});
+			let parentDiv = document.getElementById('AutoSearchIP').parentElement;
+
+			parentDiv.style.border = '1px solid var(--settings-item-border-color)';
+			parentDiv.style.borderTopLeftRadius = '15px';
+			parentDiv.style.borderTopRightRadius = '15px';
+		}
+		
+		
 			
 		// PWA
 		if ('serviceWorker' in navigator) {
