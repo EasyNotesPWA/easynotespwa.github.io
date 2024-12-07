@@ -1,11 +1,12 @@
 // https://github.com/Oshanotter/offline-pwa-example/
 
-const PRECACHE = 'precache';
+const PRECACHE = 'precache-v1';
 
 // A list of local resources we always want to be cached.
 const PRECACHE_URLS = [
   'index.html',
   './', // Alias for index.html
+  'langs.js',
   'style.css',
   'android.css',
   'ios.css',
@@ -44,7 +45,6 @@ self.addEventListener('activate', event => {
     }).then(() => self.clients.claim())
   );
 });
-
 
 // On fetch, use cache but update the entry with the latest contents from the server.
 self.addEventListener('fetch', function(evt) {
